@@ -141,32 +141,39 @@
     storageBucket: "magazine-manager-9ba7a.firebasestorage.app",
     messagingSenderId: "425301403605",
     appId: "1:425301403605:web:b254bf41f57c523fc63f5c",
-    measurementId: "G-XJ9BB2DCRW"
+   
   };
 
   const app = initializeApp(firebaseConfig);
   const db_cloud = getFirestore(app);
   const auth = getAuth(app);
 
-  // CRITICAL: We attach these to 'window' so the HTML buttons can find them
+  // FIX: Attach handleLogin to 'window' so the button can find it
   window.handleLogin = async function() {
       const email = document.getElementById('login-email').value;
       const pass = document.getElementById('login-pass').value;
       try { 
           await signInWithEmailAndPassword(auth, email, pass); 
-          console.log("Login successful!");
+          console.log("Logged in successfully!");
       } 
-      catch (e) { alert("Login Failed: " + e.message); }
+      catch (e) { 
+          alert("Login Failed: " + e.message); 
+      }
   };
 
-  window.handleLogout = () => signOut(auth);
+  window.handleLogout = async function() {
+      try { await signOut(auth); }
+      catch (e) { console.error(e); }
+  };
 
+  // Auth Observer: Controls which page is visible
   onAuthStateChanged(auth, async (user) => {
+      const authScreen = document.getElementById('auth-container');
       if (user) {
-          document.getElementById('auth-container').style.display = 'none';
+          authScreen.style.display = 'none';
           await syncFromCloud();
       } else {
-          document.getElementById('auth-container').style.display = 'flex';
+          authScreen.style.display = 'flex';
       }
   });
 
@@ -176,21 +183,22 @@
           const cloudData = [];
           querySnapshot.forEach((doc) => cloudData.push(doc.data()));
           if(cloudData.length > 0) {
-              db = cloudData;
+              // 'db' is your global array from the other script
+              db = cloudData; 
               localStorage.setItem('mag_db_final', JSON.stringify(db));
-              renderHome();
+              renderHome(); 
           }
-      } catch (e) { console.error("Sync Error: ", e); }
+      } catch (e) { console.error("Sync failed: ", e); }
   };
 
   window.saveToCloud = async function(data) {
       try { await setDoc(doc(db_cloud, "subscribers", String(data.id)), data); } 
-      catch (e) { console.error("Cloud Error: ", e); }
+      catch (e) { console.error("Save to Cloud failed: ", e); }
   };
 
   window.deleteFromCloud = async function(id) {
       try { await deleteDoc(doc(db_cloud, "subscribers", String(id))); }
-      catch (e) { console.error(e); }
+      catch (e) { console.error("Delete from Cloud failed: ", e); }
   };
 </script>
 
