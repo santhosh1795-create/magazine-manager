@@ -133,8 +133,6 @@
   import { getFirestore, doc, setDoc, getDocs, collection, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
   import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-import { getAnalytics } from "firebase/analytics";
-
   // !!! REPLACE THESE WITH YOUR FIREBASE CONFIG FROM CONSOLE !!!
   const firebaseConfig = {
     apiKey: "AIzaSyCOK28EkGE53Cn1Cd4bB9e5CitImOHLonQ",
@@ -142,7 +140,7 @@ import { getAnalytics } from "firebase/analytics";
     projectId: "magazine-manager-9ba7a",
     storageBucket: "magazine-manager-9ba7a.firebasestorage.app",
     messagingSenderId: "425301403605",
-    appId: "1:425301403605:web:b254bf41f57c523fc63f5c"
+    appId: "1:425301403605:web:b254bf41f57c523fc63f5c",
     measurementId: "G-XJ9BB2DCRW"
   };
 
@@ -150,10 +148,14 @@ import { getAnalytics } from "firebase/analytics";
   const db_cloud = getFirestore(app);
   const auth = getAuth(app);
 
+  // CRITICAL: We attach these to 'window' so the HTML buttons can find them
   window.handleLogin = async function() {
       const email = document.getElementById('login-email').value;
       const pass = document.getElementById('login-pass').value;
-      try { await signInWithEmailAndPassword(auth, email, pass); } 
+      try { 
+          await signInWithEmailAndPassword(auth, email, pass); 
+          console.log("Login successful!");
+      } 
       catch (e) { alert("Login Failed: " + e.message); }
   };
 
@@ -169,14 +171,16 @@ import { getAnalytics } from "firebase/analytics";
   });
 
   window.syncFromCloud = async function() {
-      const querySnapshot = await getDocs(collection(db_cloud, "subscribers"));
-      const cloudData = [];
-      querySnapshot.forEach((doc) => cloudData.push(doc.data()));
-      if(cloudData.length > 0) {
-          db = cloudData;
-          localStorage.setItem('mag_db_final', JSON.stringify(db));
-          renderHome();
-      }
+      try {
+          const querySnapshot = await getDocs(collection(db_cloud, "subscribers"));
+          const cloudData = [];
+          querySnapshot.forEach((doc) => cloudData.push(doc.data()));
+          if(cloudData.length > 0) {
+              db = cloudData;
+              localStorage.setItem('mag_db_final', JSON.stringify(db));
+              renderHome();
+          }
+      } catch (e) { console.error("Sync Error: ", e); }
   };
 
   window.saveToCloud = async function(data) {
